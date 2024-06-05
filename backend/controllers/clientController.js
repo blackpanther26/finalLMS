@@ -3,7 +3,9 @@ const { createTransaction, getTransactionsByUser, isBookCheckedOut, getActiveChe
 
 const viewBooks = async (req, res) => {
   const books = await getBooks();
-  res.json(books);
+
+  res.render('user-portal', { books });
+  //res.json(books);
 };
 
 const requestCheckout = async (req, res) => {
@@ -33,7 +35,7 @@ const requestCheckin = async (req, res) => {
       await createTransaction(userId, bookId, 'checkin');
       res.send('Check-in request sent');
     } catch (error) {
-      //console.log(error);
+     //console.log(error);
       res.status(500).send('Error sending check-in request');
     }
     return;
@@ -47,8 +49,8 @@ const requestCheckin = async (req, res) => {
 
 
 const viewBorrowingHistory = async (req, res) => {
-  const transactions = await getTransactionsByUser(req.user.userId);
-  res.json(transactions);
+  const history = await getTransactionsByUser(req.user.userId);
+  res.render('viewhistory', { history });
 };
 
 module.exports = { viewBooks, requestCheckout, requestCheckin, viewBorrowingHistory };

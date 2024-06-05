@@ -1,29 +1,23 @@
 const { verifyToken } = require('../utils/jwt');
+//const cookieParser = require('cookie-parser'); // Ensure you use cookie-parser middleware in your main app
 
 const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  //console.log('Authorization Header:', authHeader); // Debugging log
 
-  if (!authHeader) {
-    //console.log('No Authorization header present'); // Debugging log
-    return res.status(401).send('Access Denied');
-  }
-
-  const token = authHeader.split(' ')[1]; // Remove 'Bearer' prefix if present
-  //console.log('Extracted Token:', token); // Debugging log
+  const token = req.cookies.jwt;
+  console.log('JWT Cookie:', token); 
 
   if (!token) {
-    //console.log('No token found after splitting Authorization header'); // Debugging log
+    console.log('No JWT token found in cookies'); // Debugging log
     return res.status(401).send('Access Denied');
   }
 
   try {
     const verified = verifyToken(token);
-    //console.log('Verified User:', verified); // Debugging log
+    console.log('Verified User:', verified); // Debugging log
     req.user = verified;
     next();
   } catch (err) {
-    //console.log('Token verification failed:', err.message); // Debugging log
+    console.log('Token verification failed:', err.message); // Debugging log
     res.status(400).send('Invalid Token');
   }
 };
