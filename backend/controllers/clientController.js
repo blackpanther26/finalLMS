@@ -25,15 +25,15 @@ const requestCheckin = async (req, res) => {
 
   // Check if there is an active checkout transaction for this book by this user
   const activeCheckoutTransaction = await getActiveCheckoutTransaction(userId, bookId);
-  console.log(activeCheckoutTransaction);
+  //console.log(activeCheckoutTransaction);
   if (activeCheckoutTransaction.length === 0) {
     // If there's no active checkout transaction, treat it as a check-in request
     try {
-      console.log("first")
+      //console.log("first")
       await createTransaction(userId, bookId, 'checkin');
       res.send('Check-in request sent');
     } catch (error) {
-      console.log(error);
+      //console.log(error);
       res.status(500).send('Error sending check-in request');
     }
     return;
