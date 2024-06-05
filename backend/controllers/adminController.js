@@ -7,7 +7,6 @@ const {
 const { updateUserRole, getUserByUsername } = require("../models/userModel");
 const { getTransactions, getTransactionById, updateTransaction } = require('../models/transactionModel');
 
-
 const listBooks = async (req, res) => {
   try {
     const books = await getBooks();
@@ -70,7 +69,29 @@ const approveAdminRequest = async (req, res) => {
   }
 };
 
+const disapproveAdminRequest = async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const user = await getUserByUsername(username);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    if (!user.is_admin) {
+      return res.status(400).send("User is not an admin");
+    }
+
+    await updateUserRole(username, false);
+
+    res.send("Admin request disapproved");
+  } catch (error) {
+    res.status(500).send("Error disapproving admin request");
+  }
+};
+
 const listTransactions = async (req, res) => {
+  console.log("sgfk",req.body);
   try {
     const transactions = await getTransactions();
     res.json(transactions);
@@ -85,7 +106,7 @@ const approveCheckoutRequest = async (req, res) => {
   try {
     // Get the transaction by ID
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.type !== 'checkout') {
+    if (!transaction || transaction.transaction_type !== 'checkout') {
       return res.status(400).send('Invalid checkout transaction');
     }
 
@@ -98,13 +119,31 @@ const approveCheckoutRequest = async (req, res) => {
   }
 };
 
-const approveCheckinRequest = async (req, res) => {
+const disapproveCheckoutRequest = async (req, res) => {
   const { transactionId } = req.body;
 
   try {
+    const transaction = await getTransactionById(transactionId);
+    if (!transaction || transaction.transaction_type !== 'checkout') {
+      return res.status(400).send('Invalid checkout transaction');
+    }
+
+    await updateTransaction(transactionId, { status: 'disapproved' });
+
+    res.send('Checkout request disapproved');
+  } catch (error) {
+    res.status(500).send("Error disapproving checkout request");
+  }
+};
+
+const approveCheckinRequest = async (req, res) => {
+  console.log(req);
+  //const { transactionId } = req.body;
+  //console.log("transactionId",transactionId);
+  try {
     // Get the transaction by ID
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.type !== 'checkin') {
+    if (!transaction || transaction.transaction_type !== 'checkin') {
       return res.status(400).send('Invalid checkin transaction');
     }
 
@@ -117,6 +156,22 @@ const approveCheckinRequest = async (req, res) => {
   }
 };
 
+const disapproveCheckinRequest = async (req, res) => {
+  const { transactionId } = req.body;
+
+  try {
+    const transaction = await getTransactionById(transactionId);
+    if (!transaction || transaction.transaction_type !== 'checkin') {
+      return res.status(400).send('Invalid checkin transaction');
+    }
+
+    await updateTransaction(transactionId, { status: 'disapproved' });
+
+    res.send('Checkin request disapproved');
+  } catch (error) {
+    res.status(500).send("Error disapproving checkin request");
+  }
+};
 
 module.exports = {
   listBooks,
@@ -124,7 +179,10 @@ module.exports = {
   updateBookDetails,
   removeBook,
   approveAdminRequest,
+  disapproveAdminRequest,
   listTransactions,
   approveCheckoutRequest,
-  approveCheckinRequest
+  disapproveCheckoutRequest,
+  approveCheckinRequest,
+  disapproveCheckinRequest
 };
