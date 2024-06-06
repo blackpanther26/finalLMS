@@ -14,14 +14,15 @@ CREATE TABLE books (
 );
 
 CREATE TABLE transactions (
-id SERIAL PRIMARY KEY,
-user_id INTEGER REFERENCES users(id),
-book_id INTEGER REFERENCES books(id),
-transaction_type VARCHAR(10) NOT NULL,
-transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-due_date TIMESTAMP,
-return_date TIMESTAMP,
-fine DECIMAL(10, 2) DEFAULT 0
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    book_id INTEGER REFERENCES books(id),
+    transaction_type VARCHAR(10) NOT NULL,
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    due_date TIMESTAMP,
+    return_date TIMESTAMP,
+    fine DECIMAL(10, 2) DEFAULT 0,
+    status VARCHAR(10) NOT NULL
 );
 
 CREATE TABLE admin_requests (
