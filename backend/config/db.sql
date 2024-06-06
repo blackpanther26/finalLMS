@@ -22,7 +22,7 @@ CREATE TABLE transactions (
     due_date TIMESTAMP,
     return_date TIMESTAMP,
     fine DECIMAL(10, 2) DEFAULT 0,
-    status VARCHAR(10) NOT NULL
+    status VARCHAR(255) DEFAULT 'pending'
 );
 
 CREATE TABLE admin_requests (
