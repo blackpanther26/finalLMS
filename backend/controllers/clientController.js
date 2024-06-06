@@ -6,6 +6,19 @@ const viewBooks = async (req, res) => {
   const books = await getBooks();
   res.render('user-portal', { books });
 };
+const searchBooks = asyncHandler(async (req, res) => {
+  const { search } = req.query; 
+
+  const sqlQuery =
+    "SELECT * FROM books WHERE LOWER(title) LIKE LOWER(?) OR LOWER(author) LIKE LOWER(?) AND total_copies >= 1";
+  try {
+    const [results] = await pool.query(sqlQuery, [`%${search}%`, `%${search}%`]);
+    res.render("search", { books: results, success: null, error: null });
+  } catch (err) {
+    console.error("Error searching books:", err);
+    res.render('search', { books: [], error: 'Error searching books', success: null });
+  }
+});
 
 const requestCheckout = async (req, res) => {
   const { bookId } = req.body;
@@ -72,6 +85,7 @@ const requestAdminPrivilege = asyncHandler(async (req, res) => {
 
 module.exports = {
   viewBooks,
+  searchBooks,
   requestCheckout,
   requestCheckin,
   viewBorrowingHistory,

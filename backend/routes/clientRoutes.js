@@ -5,6 +5,7 @@ const {
   requestCheckin,
   viewBorrowingHistory,
   requestAdminPrivilege,
+  searchBooks,
 } = require("../controllers/clientController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -16,7 +17,7 @@ router.get("/books", viewBooks);
 router.post("/checkout", requestCheckout);
 router.post("/checkin", requestCheckin);
 router.get("/history", viewBorrowingHistory);
-
+router.get("/search", searchBooks);
 router.post("/request-admin", requestAdminPrivilege);
 
 router.get("/logout", (req, res) => {
