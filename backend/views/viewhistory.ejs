@@ -4,14 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Borrowing History</title>
-  <!-- Bootstrap CSS -->
   <link
     rel="stylesheet"
     href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
   />
 </head>
 <body>
-  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="#">Library Management System</a>
@@ -39,7 +37,6 @@
     </div>
   </nav>
 
-  <!-- Borrowing History Content -->
   <div class="container mt-5">
     <h2>Borrowing History</h2>
     <% if (history && history.length > 0) { %>
@@ -47,7 +44,7 @@
         <thead>
           <tr>
             <th>Book Title</th>
-            <th>Borrowed On</th>
+            <th>Requested On</th>
             <th>Returned On</th>
           </tr>
         </thead>

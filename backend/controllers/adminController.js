@@ -8,7 +8,7 @@ const {
   deleteBook,
   getBookById,
 } = require("../models/bookModel");
-// const { updateUserRole, getUserByUsername } = require("../models/userModel");
+
 const {
   getTransactions,
   getTransactionById,
@@ -78,50 +78,83 @@ const removeBook = async (req, res) => {
 };
 
 const viewAdminRequests = asyncHandler(async (req, res) => {
-  const [requests] = await pool.execute(
-    "SELECT ar.id, u.username, ar.status FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending'"
-  );
-  res.render("admin-requests", { requests });
+  try {
+    const [requests] = await pool.execute(
+      "SELECT ar.id, ar.user_id, u.username, ar.status FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending'"
+    );
+
+    res.render("admin-requests", { requests, success: null, error: null });
+  } catch (error) {
+    res.status(500).send("Error fetching admin requests");
+  }
 });
 
 const approveAdminRequest = asyncHandler(async (req, res) => {
   const { requestId } = req.body;
 
-  const [request] = await pool.execute(
-    "SELECT * FROM admin_requests WHERE id = ?",
-    [requestId]
-  );
-  if (request.length === 0) {
-    return res.status(404).json({ success: false, msg: "Request not found." });
+  try {
+    const [requests] = await pool.execute(
+      "SELECT ar.id, ar.user_id, u.username, ar.status FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending'"
+    );
+
+    const [request] = await pool.execute(
+      "SELECT * FROM admin_requests WHERE id = ?",
+      [requestId]
+    );
+    if (request.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Request not found." });
+    }
+
+    const userId = request[0].user_id;
+    await pool.execute("UPDATE users SET is_admin = 1 WHERE id = ?", [userId]);
+    await pool.execute(
+      "UPDATE admin_requests SET status = 'approved' WHERE id = ?",
+      [requestId]
+    );
+
+    res.render("admin-requests", {
+      requests,
+      success: "Admin request approved.",
+      error: null,
+    });
+  } catch (error) {
+    res.status(500).send("Error approving admin request");
   }
-
-  const userId = request[0].user_id;
-  await pool.execute("UPDATE users SET is_admin = 1 WHERE id = ?", [userId]);
-  await pool.execute(
-    "UPDATE admin_requests SET status = 'approved' WHERE id = ?",
-    [requestId]
-  );
-
-  res.status(200).json({ success: true, msg: "Admin request approved." });
 });
 
 const denyAdminRequest = asyncHandler(async (req, res) => {
   const { requestId } = req.body;
 
-  const [request] = await pool.execute(
-    "SELECT * FROM admin_requests WHERE id = ?",
-    [requestId]
-  );
-  if (request.length === 0) {
-    return res.status(404).json({ success: false, msg: "Request not found." });
+  try {
+    const [requests] = await pool.execute(
+      "SELECT ar.id, ar.user_id, u.username, ar.status FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending'"
+    );
+
+    const [request] = await pool.execute(
+      "SELECT * FROM admin_requests WHERE id = ?",
+      [requestId]
+    );
+    if (request.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Request not found." });
+    }
+
+    await pool.execute(
+      "UPDATE admin_requests SET status = 'denied' WHERE id = ?",
+      [requestId]
+    );
+
+    res.render("admin-requests", {
+      requests,
+      success: "Admin request denied.",
+      error: null,
+    });
+  } catch (error) {
+    res.status(500).send("Error denying admin request");
   }
-
-  await pool.execute(
-    "UPDATE admin_requests SET status = 'denied' WHERE id = ?",
-    [requestId]
-  );
-
-  res.status(200).json({ success: true, msg: "Admin request denied." });
 });
 
 const listTransactions = async (req, res) => {
