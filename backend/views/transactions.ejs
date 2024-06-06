@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
 </head>
 <body>
-    <!-- Dark-Themed Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">Transactions</a>
@@ -28,12 +27,11 @@
     </nav>
 
     <div class="container mt-5">
-        <!-- <h1 class="mb-4">Transaction Management</h1> -->
+
         <% if (typeof success !== 'undefined') { %>
             <div class="alert alert-success" role="alert">
               <%= success %>
             </div>
-            <!-- JavaScript to remove the success alert after a delay -->
             <script>
               setTimeout(function() {
                 var successAlert = document.querySelector('.alert-success');
@@ -46,7 +44,6 @@
             <div class="alert alert-danger" role="alert">
               <%= error %>
             </div>
-            <!-- JavaScript to remove the error alert after a delay -->
             <script>
               setTimeout(function() {
                 var errorAlert = document.querySelector('.alert-danger');

@@ -29,8 +29,6 @@ router.get('/addNewBook',renderaddNewBook);
 router.get('/books/:id', renderUpdateForm);
 router.post('/books/:id', handleBookUpdate);
 
-//router.put('/books/:id', updateBookDetails);
-//router.delete('/books/:id', removeBook);
 router.post('/books/delete/:id', removeBook);
 router.get('/transactions', listTransactions);
 router.post('/transactions/checkout/approve', approveCheckoutRequest);

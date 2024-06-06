@@ -18,7 +18,6 @@ const {
 const listBooks = async (req, res) => {
   try {
     const books = await getBooks();
-    // Pass success or error messages if they exist
     const { success, error } = req.query;
     res.render("admin-dashboard", { books, success, error });
   } catch (error) {
@@ -49,9 +48,9 @@ const handleBookUpdate = async (req, res) => {
   const { title, author, isbn, total_copies } = req.body;
   try {
     await updateBook(id, title, author, isbn, total_copies);
-    res.redirect(`/api/admin/books/${id}?success=true`); // Redirect with a query parameter for success
+    res.redirect(`/api/admin/books/${id}?success=true`); 
   } catch (error) {
-    res.redirect(`/api/admin/books/${id}?error=Error updating book details`); // Redirect with a query parameter for error
+    res.redirect(`/api/admin/books/${id}?error=Error updating book details`); 
   }
 };
 

@@ -1,4 +1,4 @@
-const { getBooks, getBookById } = require('../models/bookModel');
+const { getBooks } = require('../models/bookModel');
 const { createTransaction, getTransactionsByUser, isBookCheckedOut, getActiveCheckoutTransaction, updateTransaction } = require('../models/transactionModel');
 const asyncHandler = require("express-async-handler");
 const pool = require("../config/db");

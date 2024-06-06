@@ -47,21 +47,17 @@ const getActiveCheckoutTransaction = async (userId, bookId) => {
 };
 
 const getTransactions = async () => {
-  //console.log("getTransactions");
   const query = `
     SELECT * FROM transactions;
   `;
   try {
     const res = await pool.query(query);
-    // console.log(res); // Logging the entire result to understand its structure
-    // Adjusting to access the first element of the outer array, which contains the transaction records
-    return res[0]; // This should now correctly return the array of transaction objects
+    return res[0]; 
   } catch (error) {
     console.error('Error executing query:', error);
-    throw error; // Rethrow the error to propagate it up the call stack
+    throw error; 
   }
 };
-
 
 const getTransactionById = async (transactionId) => {
   const query = `

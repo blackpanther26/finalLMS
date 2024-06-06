@@ -24,9 +24,7 @@ const updateBook = async (id, title, author, isbn, total_copies) => {
 
 const deleteBook = async (id) => {
   const query = 'DELETE FROM books WHERE id = ?';
-  //console.log("delete book");
   await pool.query(query, [id]);
-  //location.reload();
 };
 
 module.exports = { getBooks, getBookById, addBook, updateBook, deleteBook };
