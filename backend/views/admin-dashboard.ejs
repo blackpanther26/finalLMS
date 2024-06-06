@@ -1,11 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-    
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">Admin Dashboard</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/api/admin/transactions">Transactions</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/api/admin/admin-requests">Admin Requests</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/api/admin/addNewBook">Add New Book</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/api/admin/logout">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <% if (typeof success !== 'undefined') { %>
+      <div class="alert alert-success" role="alert">
+        <%= success %>
+      </div>
+      <script>
+        setTimeout(function() {
+          var successAlert = document.querySelector('.alert-success');
+          if (successAlert) {
+            successAlert.remove();
+          }
+        }, 3000);
+      </script>
+    <% } else if (typeof error !== 'undefined') { %>
+      <div class="alert alert-danger" role="alert">
+        <%= error %>
+      </div>
+      <script>
+        setTimeout(function() {
+          var errorAlert = document.querySelector('.alert-danger');
+          if (errorAlert) {
+            errorAlert.remove();
+          }
+        }, 2000);
+      </script>
+    <% } %>
+
+    <h2>All Books</h2>
+    <% if (books.length > 0) { %>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Available Copies</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% books.forEach(book => { %>
+            <tr>
+              <td><%= book.title %></td>
+              <td><%= book.author %></td>
+              <td><%= book.isbn %></td>
+              <td><%= book.total_copies %></td>
+              <td>
+                <form action="/api/admin/books/<%= book.id %>" method="PUT" style="display:inline;">
+                  <input type="hidden" name="_method" value="PUT">
+                  <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+                <form action="/api/admin/books/delete/<%= book.id %>" method="POST" style="display:inline;">
+                  <input type="hidden" name="_method" value="DELETE">
+                  <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p>No books available.</p>
+    <% } %>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

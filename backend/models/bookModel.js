@@ -8,23 +8,25 @@ const getBooks = async () => {
 
 const getBookById = async (id) => {
   const query = 'SELECT * FROM books WHERE id = ?';
-  const res = await pool.query(query, [id]);
-  return res[0];
+  const [rows] = await pool.query(query, [id]);
+  return rows[0];
 };
 
-const addBook = async (title, author, isbn) => {
-  const query = 'INSERT INTO books (title, author, isbn) VALUES (?, ?, ?)';
-  await pool.query(query, [title, author, isbn]);
+const addBook = async (title, author, isbn, total_copies) => {
+  const query = 'INSERT INTO books (title, author, isbn, total_copies) VALUES (?, ?, ?, ?)';
+  await pool.query(query, [title, author, isbn, total_copies]);
 };
 
-const updateBook = async (id, title, author, isbn) => {
-  const query = 'UPDATE books SET title = ?, author = ?, isbn = ? WHERE id = ?';
-  await pool.query(query, [title, author, isbn, id]);
+const updateBook = async (id, title, author, isbn, total_copies) => {
+  const query = 'UPDATE books SET title = ?, author = ?, isbn = ?, total_copies = ? WHERE id = ?';
+  await pool.query(query, [title, author, isbn, total_copies, id]);
 };
 
 const deleteBook = async (id) => {
   const query = 'DELETE FROM books WHERE id = ?';
+  //console.log("delete book");
   await pool.query(query, [id]);
+  //location.reload();
 };
 
 module.exports = { getBooks, getBookById, addBook, updateBook, deleteBook };

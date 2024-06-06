@@ -1,39 +1,68 @@
+const pool = require("../config/db");
+const asyncHandler = require("express-async-handler");
+
 const {
   getBooks,
   addBook,
   updateBook,
   deleteBook,
+  getBookById,
 } = require("../models/bookModel");
-const { updateUserRole, getUserByUsername } = require("../models/userModel");
-const { getTransactions, getTransactionById, updateTransaction } = require('../models/transactionModel');
+// const { updateUserRole, getUserByUsername } = require("../models/userModel");
+const {
+  getTransactions,
+  getTransactionById,
+  updateTransaction,
+} = require("../models/transactionModel");
 
 const listBooks = async (req, res) => {
   try {
     const books = await getBooks();
-    res.json(books);
+    // Pass success or error messages if they exist
+    const { success, error } = req.query;
+    res.render("admin-dashboard", { books, success, error });
   } catch (error) {
     res.status(500).send("Error fetching books");
   }
 };
 
+const renderaddNewBook = (req, res) => {
+  res.render("addnewbook");
+};
+
 const addNewBook = async (req, res) => {
-  const { title, author, isbn } = req.body;
+  const { title, author, isbn, total_copies } = req.body;
   try {
-    await addBook(title, author, isbn);
-    res.send("Book added successfully");
+    await addBook(title, author, isbn, total_copies);
+    res.render("addnewbook", { success: "Book added successfully" });
   } catch (error) {
-    res.status(500).send("Error adding book");
+    res.render("addnewbook", { error: "Error adding book" });
   }
 };
 
-const updateBookDetails = async (req, res) => {
+const getBookDetails = async (id) => {
+  return await getBookById(id);
+};
+
+const handleBookUpdate = async (req, res) => {
   const { id } = req.params;
-  const { title, author, isbn } = req.body;
+  const { title, author, isbn, total_copies } = req.body;
   try {
-    await updateBook(id, title, author, isbn);
-    res.send("Book updated successfully");
+    await updateBook(id, title, author, isbn, total_copies);
+    res.redirect(`/api/admin/books/${id}?success=true`); // Redirect with a query parameter for success
   } catch (error) {
-    res.status(500).send("Error updating book details");
+    res.redirect(`/api/admin/books/${id}?error=Error updating book details`); // Redirect with a query parameter for error
+  }
+};
+
+const renderUpdateForm = async (req, res) => {
+  const { id } = req.params;
+  const { success, error } = req.query;
+  try {
+    const book = await getBookDetails(id);
+    res.render("updateBookDetails", { book, success, error });
+  } catch (error) {
+    res.status(500).send("Error retrieving book details");
   }
 };
 
@@ -41,62 +70,70 @@ const removeBook = async (req, res) => {
   const { id } = req.params;
   try {
     await deleteBook(id);
-    res.send("Book deleted successfully");
+    res.redirect("/api/admin/books?success=Book%20deleted%20successfully");
   } catch (error) {
-    res.status(500).send("Error deleting book");
+    console.error(error);
+    res.redirect("/api/admin/books?error=Error%20deleting%20book");
   }
 };
 
-const approveAdminRequest = async (req, res) => {
-  const { username } = req.body;
+const viewAdminRequests = asyncHandler(async (req, res) => {
+  const [requests] = await pool.execute(
+    "SELECT ar.id, u.username, ar.status FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending'"
+  );
+  res.render("admin-requests", { requests });
+});
 
-  try {
-    // Check if the user exists
-    const user = await getUserByUsername(username);
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
+const approveAdminRequest = asyncHandler(async (req, res) => {
+  const { requestId } = req.body;
 
-    // Toggle the is_admin field
-    const newIsAdminValue = !user.is_admin;
-
-    // Update the user's role
-    await updateUserRole(username, newIsAdminValue);
-
-    res.send("Admin request approved");
-  } catch (error) {
-    res.status(500).send("Error approving admin request");
+  const [request] = await pool.execute(
+    "SELECT * FROM admin_requests WHERE id = ?",
+    [requestId]
+  );
+  if (request.length === 0) {
+    return res.status(404).json({ success: false, msg: "Request not found." });
   }
-};
 
-const disapproveAdminRequest = async (req, res) => {
-  const { username } = req.body;
+  const userId = request[0].user_id;
+  await pool.execute("UPDATE users SET is_admin = 1 WHERE id = ?", [userId]);
+  await pool.execute(
+    "UPDATE admin_requests SET status = 'approved' WHERE id = ?",
+    [requestId]
+  );
 
-  try {
-    const user = await getUserByUsername(username);
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
+  res.status(200).json({ success: true, msg: "Admin request approved." });
+});
 
-    if (!user.is_admin) {
-      return res.status(400).send("User is not an admin");
-    }
+const denyAdminRequest = asyncHandler(async (req, res) => {
+  const { requestId } = req.body;
 
-    await updateUserRole(username, false);
-
-    res.send("Admin request disapproved");
-  } catch (error) {
-    res.status(500).send("Error disapproving admin request");
+  const [request] = await pool.execute(
+    "SELECT * FROM admin_requests WHERE id = ?",
+    [requestId]
+  );
+  if (request.length === 0) {
+    return res.status(404).json({ success: false, msg: "Request not found." });
   }
-};
+
+  await pool.execute(
+    "UPDATE admin_requests SET status = 'denied' WHERE id = ?",
+    [requestId]
+  );
+
+  res.status(200).json({ success: true, msg: "Admin request denied." });
+});
 
 const listTransactions = async (req, res) => {
-  console.log("sgfk",req.body);
   try {
     const transactions = await getTransactions();
-    res.json(transactions);
+    res.render("transactions", { transactions, error: null, success: null });
   } catch (error) {
-    res.status(500).send("Error fetching transactions");
+    res.render("transactions", {
+      transactions: [],
+      error: "Error fetching transactions",
+      success: null,
+    });
   }
 };
 
@@ -104,18 +141,27 @@ const approveCheckoutRequest = async (req, res) => {
   const { transactionId } = req.body;
 
   try {
-    // Get the transaction by ID
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.transaction_type !== 'checkout') {
-      return res.status(400).send('Invalid checkout transaction');
+    if (!transaction || transaction.transaction_type !== "checkout") {
+      return res.render("transactions", {
+        transactions: await getTransactions(),
+        error: "Invalid checkout transaction",
+        success: null,
+      });
     }
 
-    // Update the transaction status to approved
-    await updateTransaction(transactionId, { status: 'approved' });
-
-    res.send('Checkout request approved');
+    await updateTransaction(transactionId, { status: "approved" });
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      success: "Checkout request approved",
+      error: null,
+    });
   } catch (error) {
-    res.status(500).send("Error approving checkout request");
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      error: "Error approving checkout request",
+      success: null,
+    });
   }
 };
 
@@ -124,35 +170,54 @@ const disapproveCheckoutRequest = async (req, res) => {
 
   try {
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.transaction_type !== 'checkout') {
-      return res.status(400).send('Invalid checkout transaction');
+    if (!transaction || transaction.transaction_type !== "checkout") {
+      return res.render("transactions", {
+        transactions: await getTransactions(),
+        error: "Invalid checkout transaction",
+        success: null,
+      });
     }
 
-    await updateTransaction(transactionId, { status: 'disapproved' });
-
-    res.send('Checkout request disapproved');
+    await updateTransaction(transactionId, { status: "disapproved" });
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      success: "Checkout request disapproved",
+      error: null,
+    });
   } catch (error) {
-    res.status(500).send("Error disapproving checkout request");
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      error: "Error disapproving checkout request",
+      success: null,
+    });
   }
 };
 
 const approveCheckinRequest = async (req, res) => {
-  console.log(req);
-  //const { transactionId } = req.body;
-  //console.log("transactionId",transactionId);
+  const { transactionId } = req.body;
+
   try {
-    // Get the transaction by ID
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.transaction_type !== 'checkin') {
-      return res.status(400).send('Invalid checkin transaction');
+    if (!transaction || transaction.transaction_type !== "checkin") {
+      return res.render("transactions", {
+        transactions: await getTransactions(),
+        error: "Invalid checkin transaction",
+        success: null,
+      });
     }
 
-    // Update the transaction status to approved
-    await updateTransaction(transactionId, { status: 'approved' });
-
-    res.send('Checkin request approved');
+    await updateTransaction(transactionId, { status: "approved" });
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      success: "Checkin request approved",
+      error: null,
+    });
   } catch (error) {
-    res.status(500).send("Error approving checkin request");
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      error: "Error approving checkin request",
+      success: null,
+    });
   }
 };
 
@@ -161,28 +226,42 @@ const disapproveCheckinRequest = async (req, res) => {
 
   try {
     const transaction = await getTransactionById(transactionId);
-    if (!transaction || transaction.transaction_type !== 'checkin') {
-      return res.status(400).send('Invalid checkin transaction');
+    if (!transaction || transaction.transaction_type !== "checkin") {
+      return res.render("transactions", {
+        transactions: await getTransactions(),
+        error: "Invalid checkin transaction",
+        success: null,
+      });
     }
 
-    await updateTransaction(transactionId, { status: 'disapproved' });
-
-    res.send('Checkin request disapproved');
+    await updateTransaction(transactionId, { status: "disapproved" });
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      success: "Checkin request disapproved",
+      error: null,
+    });
   } catch (error) {
-    res.status(500).send("Error disapproving checkin request");
+    res.render("transactions", {
+      transactions: await getTransactions(),
+      error: "Error disapproving checkin request",
+      success: null,
+    });
   }
 };
 
 module.exports = {
   listBooks,
+  renderaddNewBook,
   addNewBook,
-  updateBookDetails,
+  renderUpdateForm,
   removeBook,
+  viewAdminRequests,
   approveAdminRequest,
-  disapproveAdminRequest,
+  denyAdminRequest,
   listTransactions,
+  handleBookUpdate,
   approveCheckoutRequest,
   disapproveCheckoutRequest,
   approveCheckinRequest,
-  disapproveCheckinRequest
+  disapproveCheckinRequest,
 };

@@ -4,7 +4,7 @@ const { verifyToken } = require('../utils/jwt');
 const authMiddleware = (req, res, next) => {
 
   const token = req.cookies.jwt;
-  console.log('JWT Cookie:', token); 
+  //console.log('JWT Cookie:', token); 
 
   if (!token) {
     console.log('No JWT token found in cookies'); // Debugging log
@@ -13,7 +13,7 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const verified = verifyToken(token);
-    console.log('Verified User:', verified); // Debugging log
+    //console.log('Verified User:', verified); // Debugging log
     req.user = verified;
     next();
   } catch (err) {

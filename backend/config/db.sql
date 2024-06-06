@@ -22,3 +22,9 @@ due_date TIMESTAMP,
 return_date TIMESTAMP,
 fine DECIMAL(10, 2) DEFAULT 0
 );
+
+CREATE TABLE admin_requests (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    status ENUM('pending', 'approved', 'denied') DEFAULT 'pending'
+);

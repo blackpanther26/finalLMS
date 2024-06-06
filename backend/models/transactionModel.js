@@ -47,13 +47,13 @@ const getActiveCheckoutTransaction = async (userId, bookId) => {
 };
 
 const getTransactions = async () => {
-  console.log("getTransactions");
+  //console.log("getTransactions");
   const query = `
     SELECT * FROM transactions;
   `;
   try {
     const res = await pool.query(query);
-    console.log(res); // Logging the entire result to understand its structure
+    // console.log(res); // Logging the entire result to understand its structure
     // Adjusting to access the first element of the outer array, which contains the transaction records
     return res[0]; // This should now correctly return the array of transaction objects
   } catch (error) {

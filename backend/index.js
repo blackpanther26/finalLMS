@@ -4,10 +4,12 @@ const path = require("path");
 const authRoute = require("./routes/authRoute");
 const adminRoute = require("./routes/adminRoute");
 const clientRoutes = require('./routes/clientRoutes');
+const methodOverride = require('method-override');
 const express = require("express");
 const app = express();
 app.use(cookieParser());
 app.use(express.json());
+app.use(methodOverride('_method'));
 const publicDirectory = path.join(__dirname, "public");
 app.use(express.static(publicDirectory));
 

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Request</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h2>Submit Admin Request</h2>
+
+      <% if (message) { %>
+      <div
+        class="alert <%= message.success ? 'alert-success' : 'alert-danger' %>"
+        role="alert"
+      >
+        <%= message.msg %>
+      </div>
+      <% } %>
+
+      <form action="/api/user-portal/request-admin" method="POST">
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+      </form>
+    </div>
+  </body>
+</html>
