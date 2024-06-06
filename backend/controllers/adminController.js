@@ -31,11 +31,31 @@ const renderaddNewBook = (req, res) => {
 
 const addNewBook = async (req, res) => {
   const { title, author, isbn, total_copies } = req.body;
+
+  if (!title || !author || !isbn || !total_copies) {
+    return res.render("addnewbook", { error: "All fields must be filled" });
+  }
+
   try {
+    const existingBook = await getBookByISBN(isbn); 
+    if (existingBook) {
+      return res.render("addnewbook", { error: "ISBN must be unique" });
+    }
+
     await addBook(title, author, isbn, total_copies);
     res.render("addnewbook", { success: "Book added successfully" });
   } catch (error) {
     res.render("addnewbook", { error: "Error adding book" });
+  }
+};
+
+const getBookByISBN = async (isbn) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM books WHERE isbn = ?', [isbn]);
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error('Error fetching book by ISBN:', error);
+    throw error;
   }
 };
 
