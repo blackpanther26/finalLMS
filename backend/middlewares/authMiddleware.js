@@ -3,9 +3,7 @@ const { verifyToken } = require('../utils/jwt');
 const authMiddleware = (req, res, next) => {
 
   const token = req.cookies.jwt;
-
   if (!token) {
-    console.log('No JWT token found in cookies'); 
     return res.status(401).send('Access Denied');
   }
 

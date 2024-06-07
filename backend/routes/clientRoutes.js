@@ -8,10 +8,11 @@ const {
   searchBooks,
 } = require("../controllers/clientController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const isUser = require('../middlewares/isUser');
 const router = express.Router();
 
 router.use(authMiddleware);
-
+router.use(isUser);
 router.get("/", viewBooks);
 router.get("/books", viewBooks);
 router.post("/checkout", requestCheckout);

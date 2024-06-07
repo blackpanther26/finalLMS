@@ -68,5 +68,33 @@
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("/check-session", {
+            method: "GET",
+            credentials: "include" 
+        })
+        .then(function(response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Session check failed');
+        })
+        .then(function(data) {
+            if (data.success) {
+                if (data.user.isAdmin) {
+                    window.location.href = "/api/admin";
+                } else {
+                    window.location.href = "/api/user-portal";
+                }
+            }
+        })
+        .catch(function(error) {
+            console.log('Not authenticated or session expired');
+        });
+    });
+    </script>
+    
 </body>
 </html>

@@ -30,9 +30,13 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const [allUsers] = await pool.execute("SELECT * FROM users");
+    const isFirstUser = allUsers.length === 0;
+    const isAdmin = isFirstUser ? 1 : 0;
+
     await pool.execute(
-      "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-      [username, hashedPassword]
+      "INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)",
+      [username, hashedPassword, isAdmin]
     );
 
     const [newUser] = await pool.execute(
@@ -43,6 +47,7 @@ const registerUser = async (req, res) => {
     const token = generateToken({
       userId: newUser[0].id,
       username: newUser[0].username,
+      isAdmin: newUser[0].is_admin
     });
 
     return res.status(200).json({
@@ -90,7 +95,7 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = generateToken({ userId: user.id, username: user.username });
+    const token = generateToken({ userId: user.id, username: user.username, isAdmin: user.is_admin });
 
     res.cookie("jwt", token, {
       httpOnly: true,

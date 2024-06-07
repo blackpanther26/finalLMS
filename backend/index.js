@@ -4,6 +4,7 @@ const path = require("path");
 const authRoute = require("./routes/authRoute");
 const adminRoute = require("./routes/adminRoute");
 const clientRoutes = require('./routes/clientRoutes');
+const authMiddleware = require('./middlewares/authMiddleware');
 const methodOverride = require('method-override');
 const express = require("express");
 const app = express();
@@ -19,7 +20,9 @@ app.set("view engine", "ejs");
 app.get("/", (req, res) => {
   res.render("login");
 });
-
+app.get('/check-session', authMiddleware, (req, res) => {
+  res.status(200).json({ success: true, user: req.user });
+});
 app.use("/api", authRoute);
 app.use("/api/admin", adminRoute);
 app.use('/api/user-portal', clientRoutes);
