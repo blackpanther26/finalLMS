@@ -16,13 +16,40 @@ const getTransactionsByUser = async (userId) => {
   return res[0];
 };
 
-const isBookCheckedOut = async (bookId) => {
+const isBookCheckedOut = async (userId, bookId) => {
   const query = `
     SELECT * FROM transactions 
-    WHERE book_id = ? AND transaction_type = 'checkout' AND return_date IS NULL
+    WHERE user_id =? AND book_id =? AND transaction_type = 'checkout' AND return_date IS NULL AND status = 'approved'
+  `;
+  
+  try {
+    const res = await pool.query(query, [userId, bookId]); 
+    return res[0].length > 0;
+  } catch (error) {
+    console.error('Error executing query:', error);
+    throw error; 
+  }
+};
+
+const hasUserRequestedCheckout = async (userId, bookId) => {
+  const query = `
+    SELECT * FROM transactions 
+    WHERE user_id =? AND book_id =? AND transaction_type = 'checkout' AND return_date IS NULL AND status IN ('pending', 'approved')
+  `;
+  const res = await pool.query(query, [userId, bookId]);
+  return res[0].length > 0;
+};
+
+const getBookAvailability = async (bookId) => {
+  const query = `
+    SELECT books.total_copies - COUNT(transactions.book_id) AS available_copies
+    FROM books
+    LEFT JOIN transactions ON books.id = transactions.book_id AND transactions.transaction_type = 'checkout' AND transactions.return_date IS NULL AND transactions.status = 'approved'
+    WHERE books.id = ?
+    GROUP BY books.total_copies
   `;
   const res = await pool.query(query, [bookId]);
-  return res[0].length > 0;
+  return res[0][0].available_copies;
 };
 
 const updateTransaction = async (transactionId, updates) => {
@@ -40,7 +67,7 @@ const updateTransaction = async (transactionId, updates) => {
 const getActiveCheckoutTransaction = async (userId, bookId) => {
   const query = `
     SELECT * FROM transactions 
-    WHERE user_id = ? AND book_id = ? AND transaction_type = 'checkout' AND return_date IS NULL AND status = 'approved'
+    WHERE user_id =? AND book_id =? AND transaction_type = 'checkout' AND return_date IS NULL AND status = 'approved'
   `;
   const res = await pool.query(query, [userId, bookId]);
   return res[0];
@@ -75,6 +102,8 @@ module.exports = {
   createTransaction,
   getTransactionsByUser,
   isBookCheckedOut,
+  hasUserRequestedCheckout,
+  getBookAvailability,
   updateTransaction,
   getActiveCheckoutTransaction,
   getTransactions,

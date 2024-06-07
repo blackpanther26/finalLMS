@@ -1,39 +1,84 @@
-const { getBooks } = require('../models/bookModel');
-const { createTransaction, getTransactionsByUser, isBookCheckedOut, getActiveCheckoutTransaction, updateTransaction } = require('../models/transactionModel');
+const { getBooks } = require("../models/bookModel");
+const {
+  createTransaction,
+  getTransactionsByUser,
+  isBookCheckedOut,
+  hasUserRequestedCheckout,
+  getBookAvailability,
+  getActiveCheckoutTransaction,
+  updateTransaction,
+} = require("../models/transactionModel");
 const asyncHandler = require("express-async-handler");
 const pool = require("../config/db");
 const viewBooks = async (req, res) => {
   const books = await getBooks();
-  res.render('user-portal', { books });
+  res.render("user-portal", { books });
 };
 const searchBooks = asyncHandler(async (req, res) => {
-  const { search } = req.query; 
+  const { search } = req.query;
 
   const sqlQuery =
     "SELECT * FROM books WHERE LOWER(title) LIKE LOWER(?) OR LOWER(author) LIKE LOWER(?) AND total_copies >= 1";
   try {
-    const [results] = await pool.query(sqlQuery, [`%${search}%`, `%${search}%`]);
+    const [results] = await pool.query(sqlQuery, [
+      `%${search}%`,
+      `%${search}%`,
+    ]);
     res.render("search", { books: results, success: null, error: null });
   } catch (err) {
     console.error("Error searching books:", err);
-    res.render('search', { books: [], error: 'Error searching books', success: null });
+    res.render("search", {
+      books: [],
+      error: "Error searching books",
+      success: null,
+    });
   }
 });
 
 const requestCheckout = async (req, res) => {
   const { bookId } = req.body;
+  const userId = req.user.userId;
 
   try {
-    const bookCheckedOut = await isBookCheckedOut(bookId);
+    const [bookCheckedOut, userRequestExists, bookAvailability] =
+      await Promise.all([
+        isBookCheckedOut(userId, bookId),
+        hasUserRequestedCheckout(userId, bookId),
+        getBookAvailability(bookId),
+      ]);
+
     if (bookCheckedOut) {
-      return res.render('user-portal', { books: await getBooks(), error: 'Book is already checked out' });
+      return res.render("user-portal", {
+        books: await getBooks(),
+        error: "Book is already checked out",
+      });
     }
 
-    await createTransaction(req.user.userId, bookId, 'checkout');
-    res.render('user-portal', { books: await getBooks(), success: 'Checkout request sent', error: null });
+    if (userRequestExists) {
+      return res.render("user-portal", {
+        books: await getBooks(),
+        error: "You have already sent a checkout request for this book",
+      });
+    }
+
+    if (bookAvailability <= 0) {
+      return res.render("user-portal", {
+        books: await getBooks(),
+        error: "Book is not available",
+      });
+    }
+
+    await createTransaction(userId, bookId, "checkout");
+    res.render("user-portal", {
+      books: await getBooks(),
+      success: "Checkout request sent",
+    });
   } catch (error) {
-    console.error('Error processing checkout request:', error);
-    res.render('user-portal', { books: await getBooks(), error: 'Error processing checkout request', success: null });
+    console.error("Error processing checkout request:", error);
+    res.render("user-portal", {
+      books: await getBooks(),
+      error: "Error processing checkout request",
+    });
   }
 };
 
@@ -42,45 +87,81 @@ const requestCheckin = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    const activeCheckoutTransaction = await getActiveCheckoutTransaction(userId, bookId);
+    const activeCheckoutTransaction = await getActiveCheckoutTransaction(
+      userId,
+      bookId
+    );
     if (activeCheckoutTransaction.length === 0) {
-      await createTransaction(userId, bookId, 'checkin');
-      res.render('user-portal', { books: await getBooks(), success: 'Check-in request sent', error: null });
+      await createTransaction(userId, bookId, "checkin");
+      res.render("user-portal", {
+        books: await getBooks(),
+        success: "Check-in request sent",
+        error: null,
+      });
     } else {
-      await updateTransaction(activeCheckoutTransaction.id, { return_date: new Date(), fine: 0 });
-      res.render('user-portal', { books: await getBooks(), success: 'Check-in request sent', error: null });
+      await updateTransaction(activeCheckoutTransaction.id, {
+        return_date: new Date(),
+        fine: 0,
+      });
+      res.render("user-portal", {
+        books: await getBooks(),
+        success: "Check-in request sent",
+        error: null,
+      });
     }
   } catch (error) {
-    console.error('Error processing check-in request:', error);
-    res.render('user-portal', { books: await getBooks(), error: 'Error processing check-in request', success: null });
+    console.error("Error processing check-in request:", error);
+    res.render("user-portal", {
+      books: await getBooks(),
+      error: "Error processing check-in request",
+      success: null,
+    });
   }
 };
 
 const viewBorrowingHistory = async (req, res) => {
   const history = await getTransactionsByUser(req.user.userId);
-  res.render('viewhistory', { history });
+  res.render("viewhistory", { history });
 };
 
 const requestAdminPrivilege = asyncHandler(async (req, res) => {
   if (!req.user || !req.user.userId) {
-    return res.status(400).json({ success: false, error: "User information missing from request." });
+    return res
+      .status(400)
+      .json({
+        success: false,
+        error: "User information missing from request.",
+      });
   }
 
   const userId = req.user.userId;
 
-  const [userRows] = await pool.execute("SELECT * FROM users WHERE id = ?", [userId]);
+  const [userRows] = await pool.execute("SELECT * FROM users WHERE id = ?", [
+    userId,
+  ]);
   if (userRows.length === 0) {
     return res.status(404).json({ success: false, error: "User not found." });
   }
   const user = userRows[0];
-  const [existingRequests] = await pool.execute("SELECT * FROM admin_requests WHERE user_id = ? AND status = 'pending'", [userId]);
+  const [existingRequests] = await pool.execute(
+    "SELECT * FROM admin_requests WHERE user_id = ? AND status = 'pending'",
+    [userId]
+  );
   if (existingRequests.length > 0) {
-    return res.render('user-portal', { books: await getBooks(), error: "You already have a pending request."});
+    return res.render("user-portal", {
+      books: await getBooks(),
+      error: "You already have a pending request.",
+    });
   }
 
-  await pool.execute("INSERT INTO admin_requests (user_id) VALUES (?)", [userId]);
+  await pool.execute("INSERT INTO admin_requests (user_id) VALUES (?)", [
+    userId,
+  ]);
 
-  res.render('user-portal', { books: await getBooks(), success: "Admin request submitted successfully." });
+  res.render("user-portal", {
+    books: await getBooks(),
+    success: "Admin request submitted successfully.",
+  });
 });
 
 module.exports = {
@@ -89,5 +170,5 @@ module.exports = {
   requestCheckout,
   requestCheckin,
   viewBorrowingHistory,
-  requestAdminPrivilege, 
+  requestAdminPrivilege,
 };
