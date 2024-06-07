@@ -37,6 +37,10 @@
                                 <label for="password">Password</label>
                                 <input type="password" class="form-control" id="password" name="password">
                             </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                            </div>
                             <button type="submit" class="btn btn-primary mr-2">Register</button>
                             <a href="/api/login" class="btn btn-secondary">Login</a>
                         </form>
@@ -59,9 +63,22 @@
                 registerForm.addEventListener("submit", function(event) {
                     event.preventDefault();
 
+                    var username = document.getElementById("username").value;
+                    var password = document.getElementById("password").value;
+                    var confirmPassword = document.getElementById("confirmPassword").value;
+
+                    messageElement.textContent = '';
+                    messageElement.classList.remove("text-danger", "text-success");
+
+                    if (password !== confirmPassword) {
+                        messageElement.textContent = "Passwords do not match.";
+                        messageElement.classList.add("text-danger");
+                        return;
+                    }
+
                     var formData = {
-                        username: document.getElementById("username").value,
-                        password: document.getElementById("password").value,
+                        username: username,
+                        password: password
                     };
 
                     fetch("/api/register", {
