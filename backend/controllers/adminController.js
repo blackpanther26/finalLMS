@@ -36,6 +36,10 @@ const addNewBook = async (req, res) => {
     return res.render("addnewbook", { error: "All fields must be filled" });
   }
 
+  if (isNaN(total_copies) || parseInt(total_copies) < 0) {
+    return res.render("addnewbook", { error: "Total copies must be a positive integer" });
+  }
+
   try {
     const existingBook = await getBookByISBN(isbn); 
     if (existingBook) {
@@ -84,10 +88,23 @@ const renderUpdateForm = async (req, res) => {
     res.status(500).send("Error retrieving book details");
   }
 };
+const isBookCheckedOut = async (id) => {
+  const query = `
+    SELECT * FROM transactions 
+    WHERE book_id =? AND transaction_type = 'checkout' AND return_date IS NULL AND status = 'approved'
+  `;
+  const res = await pool.query(query, [id]); 
+  return res[0].length > 0;
+};
 
 const removeBook = async (req, res) => {
   const { id } = req.params;
   try {
+    const checkedOut = await isBookCheckedOut(id);
+    if (checkedOut) {
+      return res.redirect("/api/admin/books?error=Cannot%20delete%20checked%20out%20book");
+    }
+    
     await deleteBook(id);
     res.redirect("/api/admin/books?success=Book%20deleted%20successfully");
   } catch (error) {
